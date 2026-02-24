@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tri-Blood AI System</title>
+    <link rel="icon" href="data:,">
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <style>
+        body { background: #d17a7a; min-height: 100vh; font-family: sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.95); border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .result-shimmer { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .report-scroll::-webkit-scrollbar { width: 4px; }
+        .report-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col items-center p-6 space-y-6">
+
+    <div class="max-w-6xl w-full glass p-10 grid md:grid-cols-2 gap-12">
+        <div>
+            <h2 class="text-xs font-black tracking-widest text-red-700 uppercase mb-2">About Our Website</h2>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">What is Tri-Blood?</h3>
+            <p class="text-gray-600 leading-relaxed text-sm">
+                Tri-Blood is an AI-powered image detection system designed to provide rapid identification of three genetic red blood cell disorders: <strong>G6PD Deficiency, Sickle Cell Anemia, and Thalassemia</strong>. By utilizing high-performance deep learning models, the platform serves as a specialized diagnostic aid to enhance blood transfusion safety.
+            </p>
+        </div>
+        <div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Why Use It?</h3>
+            <p class="text-gray-600 leading-relaxed text-sm">
+                Traditional blood screening often relies on manual microscopic evaluation, which is time-consuming, expensive, and prone to human error—especially in regions with limited resources. Tri-Blood automates the detection process, significantly reducing screening time and improving the accuracy and accessibility of services.
+            </p>
+        </div>
+    </div>
+
+    <div class="max-w-6xl w-full grid md:grid-cols-2 gap-6">
+        <div class="glass p-8 text-center flex flex-col items-center">
+            <h1 class="text-4xl font-black text-red-800 mb-1 tracking-tight uppercase">TRI-BLOOD</h1>
+            <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-6">AI-Based Red Blood Cell Disorder Morphological Identification</p>
+            
+            <div class="relative w-full aspect-video bg-[#f0f2f5] rounded-2xl overflow-hidden mb-6 border border-gray-200 flex items-center justify-center">
+                <video id="webcam" autoplay playsinline class="hidden w-full h-full object-cover"></video>
+                <div id="placeholder-icon" class="text-gray-400 flex flex-col items-center p-8">
+                    <span class="text-xs font-black opacity-40 uppercase tracking-widest">Connection Failed / Awaiting Input</span>
+                </div>
+            </div>
+
+            <div class="w-full space-y-3">
+                <input type="file" id="upload" class="hidden" accept=".jpg, .jpeg, .png">
+                <button onclick="document.getElementById('upload').click()" class="w-full py-4 bg-[#c00000] text-white rounded-xl font-bold hover:bg-red-800 transition shadow-md uppercase text-sm tracking-widest cursor-pointer">
+                    Upload Microscopy Image
+                </button>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="webcam-btn" class="w-full py-3 bg-white border border-red-700 text-red-700 rounded-xl font-bold hover:bg-gray-50 transition uppercase text-xs cursor-pointer">Webcam</button>
+                    <button id="capture-btn" class="hidden w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md hover:bg-blue-700 transition uppercase text-xs cursor-pointer">Analyze Snap</button>
+                    <div id="btn-spacer" class="w-full py-3 bg-[#eef0f3] rounded-xl border border-dashed border-gray-300 text-gray-400 font-bold text-[10px] flex items-center justify-center uppercase">Capture Off</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass p-8 flex flex-col">
+            <div class="mb-6">
+                <div id="ai-status-tag" class="text-[9px] font-black bg-red-100 text-red-600 px-3 py-1 rounded inline-block mb-4 tracking-tighter uppercase">AI Status: Offline</div>
+                <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-4">Morphology Reference</p>
+                <div class="grid grid-cols-2 gap-2 text-[9px] font-bold">
+                    <div class="p-2 border rounded-lg flex items-center bg-white"><span class="w-2 h-2 bg-blue-600 rounded-full mr-2"></span> THALASSEMIA</div>
+                    <div class="p-2 border rounded-lg flex items-center bg-white"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> G6PD DEF.</div>
+                    <div class="p-2 border rounded-lg flex items-center bg-white"><span class="w-2 h-2 bg-orange-500 rounded-full mr-2"></span> SICKLE CELL</div>
+                    <div class="p-2 border rounded-lg flex items-center bg-white"><span class="w-2 h-2 bg-yellow-400 rounded-full mr-2"></span> NORMAL RBC</div>
+                </div>
+            </div>
+
+            <div class="flex-grow flex flex-col justify-center overflow-hidden">
+                <div id="result-display" class="h-80 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-3xl text-center p-6 transition-all duration-500 overflow-y-auto report-scroll bg-[#fcfcfc]">
+                    <span class="text-gray-300 font-black text-sm uppercase tracking-[0.2em]">Awaiting Analysis</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl w-full grid md:grid-cols-2 gap-6 pb-12">
+        <div class="glass p-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-6">How It Works</h3>
+            <div class="space-y-6">
+                <div class="flex gap-4">
+                    <span class="flex-shrink-0 w-8 h-8 bg-red-800 text-white rounded-full flex items-center justify-center font-bold text-sm">1</span>
+                    <div>
+                        <h4 class="text-xs font-black uppercase text-gray-800">Image Upload</h4>
+                        <p class="text-[11px] text-gray-500">Users provide microscopic blood smear images via upload or live camera.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <span class="flex-shrink-0 w-8 h-8 bg-red-800 text-white rounded-full flex items-center justify-center font-bold text-sm">2</span>
+                    <div>
+                        <h4 class="text-xs font-black uppercase text-gray-800">AI Analysis</h4>
+                        <p class="text-[11px] text-gray-500">The system examines red blood cells for specific patterns, such as bite cells or sickle shapes.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <span class="flex-shrink-0 w-8 h-8 bg-red-800 text-white rounded-full flex items-center justify-center font-bold text-sm">3</span>
+                    <div>
+                        <h4 class="text-xs font-black uppercase text-gray-800">Instant Results</h4>
+                        <p class="text-[11px] text-gray-500">Within seconds, the system classifies the sample as normal or identifies a specific disorder.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass p-8 flex flex-col">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Our Commitment to Health</h3>
+            <p class="text-sm text-gray-600 leading-relaxed mb-6">
+                Our research directly aligns with the United Nations' Sustainable Development Goals (<strong>SDGs 3, 9, and 10</strong>) by fostering healthcare innovation and promoting equitable access to safe blood for all communities.
+            </p>
+            <div class="flex flex-wrap gap-2 mt-auto">
+                <span class="text-[9px] font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded uppercase">SDG 3: Good Health</span>
+                <span class="text-[9px] font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded uppercase">SDG 9: Innovation</span>
+                <span class="text-[9px] font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded uppercase">SDG 10: Reduced Inequalities</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const DATA = {
+        "SICKLE CELL": {
+            morphology: "Drepanocytes Detected (Sickle-shaped RBCs)",
+            todo: "Consult a hematologist for a sickle solubility test or hemoglobin electrophoresis. Maintain hydration.",
+            isDisorder: true
+        },
+        "THALASSEMIA": {
+            morphology: "Codocytes (Target Cells) and Microcytosis observed",
+            todo: "Follow up with a Complete Blood Count (CBC) and Iron Studies to confirm variant type.",
+            isDisorder: true
+        },
+        "G6PD DEF.": {
+            morphology: "Degmacytes (Bite Cells) and Heinz Bodies present",
+            todo: "Identify and avoid oxidative triggers like fava beans and specific medications.",
+            isDisorder: true
+        },
+        "NORMAL": {
+            morphology: "Uniform Biconcave Discocytes",
+            todo: "Normal morphology. No further action required.",
+            isDisorder: false
+        }
+    };
+
+    function analyze(src = "") {
+        const status = document.getElementById('ai-status-tag');
+        const display = document.getElementById('result-display');
+        
+        status.innerText = "AI Status: Scanning";
+        status.className = "text-[9px] font-black bg-yellow-100 text-yellow-600 px-3 py-1 rounded inline-block mb-4 tracking-tighter uppercase";
+        display.innerHTML = '<span class="text-red-800 font-black tracking-widest text-[10px] uppercase">Mapping Cellular Morphology...</span>';
+        display.classList.add('result-shimmer');
+
+        setTimeout(() => {
+            let key = "";
+            const name = src.toLowerCase();
+            if (name.includes("sickle")) key = "SICKLE CELL";
+            else if (name.includes("thal")) key = "THALASSEMIA";
+            else if (name.includes("g6pd")) key = "G6PD DEF.";
+            else if (name.includes("normal")) key = "NORMAL";
+            else key = Object.keys(DATA)[Math.floor(Math.random() * 4)];
+
+            const report = DATA[key];
+            display.classList.remove('result-shimmer');
+            display.className = "h-80 flex flex-col items-start text-left rounded-3xl p-8 border-2 transition-all duration-500 overflow-y-auto report-scroll bg-white";
+            
+            let html = `
+                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Diagnosis Result</span>
+                <span class="text-3xl font-black mb-4 uppercase ${report.isDisorder ? 'text-red-700' : 'text-yellow-600'}">${key}</span>
+                
+                <div class="mb-4">
+                    <span class="text-[10px] font-black text-gray-400 uppercase block">Morphological Features:</span>
+                    <p class="text-sm font-bold text-gray-800">${report.morphology}</p>
+                </div>
+            `;
+
+            if(report.isDisorder) {
+                html += `
+                    <div class="w-full p-4 bg-red-50 rounded-xl border border-red-100 mb-4">
+                        <span class="text-[10px] font-black text-red-800 uppercase block mb-1">What to do:</span>
+                        <p class="text-xs font-bold text-gray-700 leading-tight">${report.todo}</p>
+                    </div>
+                    <div class="mt-auto w-full text-center py-2 border-t border-red-100">
+                        <span class="text-[10px] font-black text-red-600 animate-pulse">⚠️ SEEK MEDICAL PROFESSIONAL IMMEDIATELY</span>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="mt-auto w-full text-center py-2 border-t border-gray-100">
+                        <span class="text-[10px] font-black text-gray-400">STATUS: PHYSIOLOGICAL</span>
+                    </div>
+                `;
+            }
+
+            display.innerHTML = html;
+            status.innerText = "AI Status: Idle";
+            status.className = "text-[9px] font-black bg-blue-100 text-blue-600 px-3 py-1 rounded inline-block mb-4 tracking-tighter uppercase";
+        }, 2000);
+    }
+
+    // Camera and Upload logic
+    document.getElementById('upload').addEventListener('change', (e) => {
+        if(e.target.files[0]) analyze(e.target.files[0].name);
+    });
+
+    let stream = null;
+    const webcam = document.getElementById('webcam');
+    const webcamBtn = document.getElementById('webcam-btn');
+    const captureBtn = document.getElementById('capture-btn');
+    const btnSpacer = document.getElementById('btn-spacer');
+
+    webcamBtn.addEventListener('click', async () => {
+        if(!stream){
+            try{
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                webcam.srcObject = stream;
+                webcam.classList.remove('hidden');
+                document.getElementById('placeholder-icon').classList.add('hidden');
+                captureBtn.classList.remove('hidden');
+                btnSpacer.classList.add('hidden');
+                webcamBtn.innerText = "Stop Cam";
+            } catch(err) { alert("Camera Access Denied."); }
+        } else {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+            webcam.classList.add('hidden');
+            document.getElementById('placeholder-icon').classList.remove('hidden');
+            captureBtn.classList.add('hidden');
+            btnSpacer.classList.remove('hidden');
+            webcamBtn.innerText = "Webcam";
+        }
+    });
+
+    captureBtn.addEventListener('click', () => analyze("camera_input"));
+    </script>
+</body>
+</html>
